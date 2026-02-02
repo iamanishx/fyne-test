@@ -1,0 +1,20 @@
+bin/, *.exe, *.dll, *.so, *.dylib, *.test, *.out, vendor/*, testdata/*, examples/*, *.cache, *.tmp, *.log
+# Directory for build outputs
+build/
+# Go workspace file
+go.work
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+passvault
