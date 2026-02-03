@@ -42,6 +42,8 @@ func (db *DB) InitSchema() error {
 	CREATE TABLE IF NOT EXISTS secrets (
 		id TEXT PRIMARY KEY,
 		name TEXT NOT NULL,
+		format TEXT,
+		content TEXT,
 		created_at DATETIME,
 		updated_at DATETIME
 	);

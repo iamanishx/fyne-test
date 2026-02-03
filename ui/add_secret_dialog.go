@@ -25,11 +25,26 @@ func (a *App) ShowEditSecretDialog(secret *database.SecretEntry) {
 func (a *App) showSecretDialog(existing *database.SecretEntry) {
 	nameEntry := widget.NewEntry()
 	nameEntry.SetPlaceHolder("Name")
+	formatOptions := []string{"Key-Value", "JSON", "Plain Text"}
+	formatSelect := widget.NewSelect(formatOptions, nil)
+	formatSelect.Selected = "Key-Value"
+	contentEntry := widget.NewMultiLineEntry()
+	contentEntry.SetPlaceHolder("Paste JSON or plaintext/markdown here")
 
 	fieldEditor := NewFieldEditor()
 
 	if existing != nil {
 		nameEntry.Text = existing.Name
+		switch existing.Format {
+		case "json":
+			formatSelect.Selected = "JSON"
+			contentEntry.Text = existing.Content
+		case "text":
+			formatSelect.Selected = "Plain Text"
+			contentEntry.Text = existing.Content
+		default:
+			formatSelect.Selected = "Key-Value"
+		}
 		for _, f := range existing.Fields {
 			fieldEditor.AddField(f)
 		}
@@ -51,13 +66,24 @@ func (a *App) showSecretDialog(existing *database.SecretEntry) {
 	fieldsCard.StrokeColor = color.NRGBA{R: 45, G: 45, B: 52, A: 200}
 	fieldsCard.StrokeWidth = 1
 	fieldsPanel := container.NewMax(fieldsCard, container.NewPadded(fieldsBox))
+	contentHeader := container.NewBorder(nil, nil, widget.NewLabel("Content"), nil, nil)
+	contentCard := canvas.NewRectangle(color.NRGBA{R: 22, G: 22, B: 26, A: 255})
+	contentCard.CornerRadius = 10
+	contentCard.StrokeColor = color.NRGBA{R: 45, G: 45, B: 52, A: 200}
+	contentCard.StrokeWidth = 1
+	contentPanel := container.NewMax(contentCard, container.NewPadded(contentEntry))
 
+	formatRow := container.NewBorder(nil, nil, widget.NewLabel("Format"), nil, formatSelect)
 	content := container.NewVBox(
 		widget.NewLabel("Secret Details"),
 		nameRow,
+		formatRow,
 		widget.NewSeparator(),
 		fieldsHeader,
 		fieldsPanel,
+		widget.NewSeparator(),
+		contentHeader,
+		contentPanel,
 	)
 
 	card := canvas.NewRectangle(color.NRGBA{R: 18, G: 18, B: 22, A: 255})
@@ -87,6 +113,8 @@ func (a *App) showSecretDialog(existing *database.SecretEntry) {
 		secret := &database.SecretEntry{
 			ID:        id,
 			Name:      nameEntry.Text,
+			Format:    formatToInternal(formatSelect.Selected),
+			Content:   contentEntry.Text,
 			CreatedAt: createdAt,
 			UpdatedAt: time.Now(),
 			Fields:    fieldEditor.GetFields(),
@@ -104,4 +132,15 @@ func (a *App) showSecretDialog(existing *database.SecretEntry) {
 
 	d.Resize(fyne.NewSize(520, 620))
 	d.Show()
+}
+
+func formatToInternal(selected string) string {
+	switch selected {
+	case "JSON":
+		return "json"
+	case "Plain Text":
+		return "text"
+	default:
+		return "kv"
+	}
 }

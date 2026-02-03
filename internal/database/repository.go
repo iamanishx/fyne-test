@@ -12,8 +12,8 @@ func (db *DB) SaveSecret(secret *SecretEntry) error {
 	defer tx.Rollback()
 
 	_, err = tx.Exec(
-		"INSERT OR REPLACE INTO secrets (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
-		secret.ID, secret.Name, secret.CreatedAt, secret.UpdatedAt,
+		"INSERT OR REPLACE INTO secrets (id, name, format, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+		secret.ID, secret.Name, secret.Format, secret.Content, secret.CreatedAt, secret.UpdatedAt,
 	)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (db *DB) SaveSecret(secret *SecretEntry) error {
 }
 
 func (db *DB) GetSecrets() ([]SecretEntry, error) {
-	rows, err := db.conn.Query("SELECT id, name, created_at, updated_at FROM secrets ORDER BY name")
+	rows, err := db.conn.Query("SELECT id, name, format, content, created_at, updated_at FROM secrets ORDER BY name")
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (db *DB) GetSecrets() ([]SecretEntry, error) {
 	var secrets []SecretEntry
 	for rows.Next() {
 		var s SecretEntry
-		if err := rows.Scan(&s.ID, &s.Name, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &s.Format, &s.Content, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		secrets = append(secrets, s)
@@ -58,8 +58,8 @@ func (db *DB) GetSecrets() ([]SecretEntry, error) {
 func (db *DB) GetSecret(id string) (*SecretEntry, error) {
 	var s SecretEntry
 	err := db.conn.QueryRow(
-		"SELECT id, name, created_at, updated_at FROM secrets WHERE id = ?", id,
-	).Scan(&s.ID, &s.Name, &s.CreatedAt, &s.UpdatedAt)
+		"SELECT id, name, format, content, created_at, updated_at FROM secrets WHERE id = ?", id,
+	).Scan(&s.ID, &s.Name, &s.Format, &s.Content, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

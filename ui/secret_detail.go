@@ -23,21 +23,32 @@ func (a *App) showSecretDetails(id string) {
 
 	nameLabel := widget.NewLabelWithStyle(secret.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 	fieldsContainer := container.NewVBox()
-	for _, field := range secret.Fields {
-		valStr := string(field.Value)
-		if field.IsSensitive {
-			valStr = "********"
-		}
-
-		valLabel := widget.NewLabel(valStr)
-		keyLabel := widget.NewLabelWithStyle(field.Key+":", fyne.TextAlignTrailing, fyne.TextStyle{Bold: true})
-
+	if secret.Format == "json" || secret.Format == "text" {
+		contentLabel := widget.NewLabel(secret.Content)
+		contentLabel.Wrapping = fyne.TextWrapWord
 		copyBtn := widget.NewButton("Copy", func() {
-			a.Clipboard.CopyWithAutoClear(string(field.Value), 30*time.Second)
+			a.Clipboard.CopyWithAutoClear(secret.Content, 30*time.Second)
 		})
-
-		row := container.NewHBox(keyLabel, valLabel, layout.NewSpacer(), copyBtn)
+		row := container.NewHBox(widget.NewLabel("Content:"), layout.NewSpacer(), copyBtn)
 		fieldsContainer.Add(row)
+		fieldsContainer.Add(contentLabel)
+	} else {
+		for _, field := range secret.Fields {
+			valStr := string(field.Value)
+			if field.IsSensitive {
+				valStr = "********"
+			}
+
+			valLabel := widget.NewLabel(valStr)
+			keyLabel := widget.NewLabelWithStyle(field.Key+":", fyne.TextAlignTrailing, fyne.TextStyle{Bold: true})
+
+			copyBtn := widget.NewButton("Copy", func() {
+				a.Clipboard.CopyWithAutoClear(string(field.Value), 30*time.Second)
+			})
+
+			row := container.NewHBox(keyLabel, valLabel, layout.NewSpacer(), copyBtn)
+			fieldsContainer.Add(row)
+		}
 	}
 
 	editBtn := widget.NewButton("Edit", func() {
