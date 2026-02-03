@@ -73,6 +73,25 @@ func (a *App) showSecretDialog(existing *database.SecretEntry) {
 	contentCard.StrokeWidth = 1
 	contentPanel := container.NewMax(contentCard, container.NewPadded(contentEntry))
 
+	setFormatVisibility := func() {
+		switch formatSelect.Selected {
+		case "JSON", "Plain Text":
+			fieldsHeader.Hide()
+			fieldsPanel.Hide()
+			contentHeader.Show()
+			contentPanel.Show()
+		default:
+			fieldsHeader.Show()
+			fieldsPanel.Show()
+			contentHeader.Hide()
+			contentPanel.Hide()
+		}
+	}
+
+	formatSelect.OnChanged = func(_ string) {
+		setFormatVisibility()
+	}
+
 	formatRow := container.NewBorder(nil, nil, widget.NewLabel("Format"), nil, formatSelect)
 	content := container.NewVBox(
 		widget.NewLabel("Secret Details"),
@@ -90,6 +109,7 @@ func (a *App) showSecretDialog(existing *database.SecretEntry) {
 	card.CornerRadius = 12
 	card.StrokeColor = color.NRGBA{R: 40, G: 40, B: 46, A: 200}
 	card.StrokeWidth = 1
+	setFormatVisibility()
 	content = container.NewPadded(content)
 	content = container.NewMax(card, content)
 

@@ -57,7 +57,45 @@ func (db *DB) InitSchema() error {
 	);
 	`
 	_, err := db.conn.Exec(query)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return db.ensureSecretColumns()
+}
+
+func (db *DB) ensureSecretColumns() error {
+	rows, err := db.conn.Query("PRAGMA table_info(secrets)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	cols := map[string]bool{}
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull int
+		var dflt interface{}
+		var pk int
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return err
+		}
+		cols[name] = true
+	}
+
+	if !cols["format"] {
+		if _, err := db.conn.Exec("ALTER TABLE secrets ADD COLUMN format TEXT"); err != nil {
+			return err
+		}
+	}
+	if !cols["content"] {
+		if _, err := db.conn.Exec("ALTER TABLE secrets ADD COLUMN content TEXT"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (db *DB) Close() error {
