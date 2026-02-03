@@ -46,14 +46,15 @@ func (a *App) showSecretDetails(id string) {
 			a.Clipboard.CopyWithAutoClear(selected, 30*time.Second)
 		})
 		headRow := container.NewHBox(widget.NewLabel("Content:"), layout.NewSpacer(), copyBtn)
-		split := container.NewVSplit(headRow, contentEntry)
+		contentBlock := container.NewVBox(headRow, contentEntry)
+		split := container.NewVSplit(contentBlock, layout.NewSpacer())
 		prefKey := "content_split_offset"
 		prefs := a.FyneApp.Preferences()
-		stored := prefs.FloatWithFallback(prefKey, 0.12)
-		if stored < 0.05 {
-			stored = 0.05
-		} else if stored > 0.5 {
+		stored := prefs.FloatWithFallback(prefKey, 0.85)
+		if stored < 0.5 {
 			stored = 0.5
+		} else if stored > 0.95 {
+			stored = 0.95
 		}
 		split.SetOffset(stored)
 		if a.contentSplitStop != nil {
