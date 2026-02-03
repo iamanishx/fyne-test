@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"bytes"
+	"encoding/json"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -24,14 +26,27 @@ func (a *App) showSecretDetails(id string) {
 	nameLabel := widget.NewLabelWithStyle(secret.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 	fieldsContainer := container.NewVBox()
 	if secret.Format == "json" || secret.Format == "text" {
-		contentLabel := widget.NewLabel(secret.Content)
-		contentLabel.Wrapping = fyne.TextWrapWord
+		contentText := secret.Content
+		if secret.Format == "json" {
+			var pretty bytes.Buffer
+			if err := json.Indent(&pretty, []byte(secret.Content), "", "  "); err == nil {
+				contentText = pretty.String()
+			}
+		}
+		contentEntry := widget.NewMultiLineEntry()
+		contentEntry.SetText(contentText)
+		contentEntry.Wrapping = fyne.TextWrapWord
+		contentEntry.Scroll = container.ScrollVerticalOnly
 		copyBtn := widget.NewButton("Copy", func() {
-			a.Clipboard.CopyWithAutoClear(secret.Content, 30*time.Second)
+			selected := contentEntry.SelectedText()
+			if selected == "" {
+				selected = contentText
+			}
+			a.Clipboard.CopyWithAutoClear(selected, 30*time.Second)
 		})
 		row := container.NewHBox(widget.NewLabel("Content:"), layout.NewSpacer(), copyBtn)
 		fieldsContainer.Add(row)
-		fieldsContainer.Add(contentLabel)
+		fieldsContainer.Add(contentEntry)
 	} else {
 		for _, field := range secret.Fields {
 			valStr := string(field.Value)
