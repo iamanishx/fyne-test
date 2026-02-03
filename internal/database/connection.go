@@ -10,6 +10,7 @@ import (
 
 type DB struct {
 	conn *sql.DB
+	path string
 }
 
 func NewDB() (*DB, error) {
@@ -33,7 +34,7 @@ func NewDB() (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{conn: conn}, nil
+	return &DB{conn: conn, path: dbPath}, nil
 }
 
 func (db *DB) InitSchema() error {
@@ -83,21 +84,71 @@ func (db *DB) ensureSecretColumns() error {
 		}
 		cols[name] = true
 	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
 
 	if !cols["format"] {
 		if _, err := db.conn.Exec("ALTER TABLE secrets ADD COLUMN format TEXT"); err != nil {
-			return err
+			if rebuildErr := db.rebuildSecretsTable(); rebuildErr != nil {
+				return rebuildErr
+			}
+			return nil
 		}
 	}
 	if !cols["content"] {
 		if _, err := db.conn.Exec("ALTER TABLE secrets ADD COLUMN content TEXT"); err != nil {
-			return err
+			if rebuildErr := db.rebuildSecretsTable(); rebuildErr != nil {
+				return rebuildErr
+			}
+			return nil
 		}
 	}
 
 	return nil
 }
 
+func (db *DB) rebuildSecretsTable() error {
+	_, err := db.conn.Exec("ALTER TABLE secrets RENAME TO secrets_backup")
+	if err != nil {
+		return err
+	}
+	_, err = db.conn.Exec(`
+	CREATE TABLE IF NOT EXISTS secrets (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		format TEXT,
+		content TEXT,
+		created_at DATETIME,
+		updated_at DATETIME
+	);
+	`)
+	if err != nil {
+		return err
+	}
+	_, _ = db.conn.Exec("INSERT INTO secrets (id, name, created_at, updated_at) SELECT id, name, created_at, updated_at FROM secrets_backup")
+	_, _ = db.conn.Exec("DROP TABLE secrets_backup")
+	return nil
+}
+
 func (db *DB) Close() error {
 	return db.conn.Close()
+}
+
+func (db *DB) Reset() error {
+	if db.conn != nil {
+		_ = db.conn.Close()
+	}
+	if err := os.Remove(db.path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	conn, err := sql.Open("sqlite3", db.path)
+	if err != nil {
+		return err
+	}
+	if err := conn.Ping(); err != nil {
+		return err
+	}
+	db.conn = conn
+	return db.InitSchema()
 }
