@@ -45,9 +45,38 @@ func (a *App) showSecretDetails(id string) {
 			}
 			a.Clipboard.CopyWithAutoClear(selected, 30*time.Second)
 		})
-		row := container.NewHBox(widget.NewLabel("Content:"), layout.NewSpacer(), copyBtn)
-		fieldsContainer.Add(row)
-		fieldsContainer.Add(contentEntry)
+		headRow := container.NewHBox(widget.NewLabel("Content:"), layout.NewSpacer(), copyBtn)
+		split := container.NewVSplit(headRow, contentEntry)
+		prefKey := "content_split_offset"
+		prefs := a.FyneApp.Preferences()
+		stored := prefs.FloatWithFallback(prefKey, 0.12)
+		if stored < 0.05 {
+			stored = 0.05
+		} else if stored > 0.5 {
+			stored = 0.5
+		}
+		split.SetOffset(stored)
+		if a.contentSplitStop != nil {
+			close(a.contentSplitStop)
+		}
+		a.contentSplitStop = make(chan struct{})
+		go func(stop <-chan struct{}) {
+			ticker := time.NewTicker(250 * time.Millisecond)
+			defer ticker.Stop()
+			last := split.Offset
+			for {
+				select {
+				case <-ticker.C:
+					if split.Offset != last {
+						last = split.Offset
+						prefs.SetFloat(prefKey, last)
+					}
+				case <-stop:
+					return
+				}
+			}
+		}(a.contentSplitStop)
+		fieldsContainer.Add(split)
 	} else {
 		for _, field := range secret.Fields {
 			valStr := string(field.Value)

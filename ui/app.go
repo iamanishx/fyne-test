@@ -11,15 +11,16 @@ import (
 )
 
 type App struct {
-	FyneApp    fyne.App
-	MainWindow fyne.Window
-	DB         *database.DB
-	State      *state.SecureState
-	Clipboard  *clipboard.Manager
-	Secrets    []database.SecretEntry
-	Filtered   []database.SecretEntry
-	List       *widget.List
-	Search     *widget.Entry
+	FyneApp          fyne.App
+	MainWindow       fyne.Window
+	DB               *database.DB
+	State            *state.SecureState
+	Clipboard        *clipboard.Manager
+	Secrets          []database.SecretEntry
+	Filtered         []database.SecretEntry
+	List             *widget.List
+	Search           *widget.Entry
+	contentSplitStop chan struct{}
 }
 
 func NewApp() (*App, error) {
