@@ -37,6 +37,7 @@ func (a *App) showSecretDetails(id string) {
 		contentEntry.SetText(contentText)
 		contentEntry.Wrapping = fyne.TextWrapWord
 		contentEntry.Scroll = container.ScrollVerticalOnly
+		contentEntry.SetMinRowsVisible(18)
 		copyBtn := widget.NewButton("Copy", func() {
 			selected := contentEntry.SelectedText()
 			if selected == "" {
